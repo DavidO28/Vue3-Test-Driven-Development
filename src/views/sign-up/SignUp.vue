@@ -1,6 +1,11 @@
 <template>
   <div class="col-lg-6 offset-lg-3 col-md-8 offset-md-2">
-    <form class="card" @submit.prevent="submit">
+    <form
+      class="card"
+      @submit.prevent="submit"
+      data-testid="form-sign-up"
+      v-if="!successMessage"
+    >
       <div class="card-header text-center">
         <h1>Sign Up</h1>
       </div>
@@ -42,17 +47,26 @@
           />
         </div>
         <div class="text-center">
-          <button class="btn btn-primary" :disabled="isDisabled">
-            Sign Up
+          <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+          <button class="btn btn-primary" :disabled="isDisabled || apiProgress">
+            <span
+              v-if="apiProgress"
+              role="status"
+              class="spinner-border spinner-border-sm"
+            ></span>
+            <span>Sign Up</span>
           </button>
         </div>
       </div>
     </form>
+    <div v-else-if="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import axios from 'axios'
 
 const formState = reactive({
@@ -68,13 +82,21 @@ const isDisabled = computed(() => {
     : true
 })
 
-const submit = () => {
+const apiProgress = ref(false)
+const successMessage = ref()
+const errorMessage = ref()
+
+const submit = async () => {
+  apiProgress.value = true
+  errorMessage.value = ''
   const { passwordRepeat, ...body } = formState
-  axios.post('/api/v1/users', body)
-  // fetch(window.location.origin + '/api/v1/users', {
-  //   method: 'POST',
-  //   headers: {'Content-type' : 'application/json'},
-  //   body: JSON.stringify(body)
-  // })
+  try{
+    const response = await axios.post('/api/v1/users', body)
+    successMessage.value = response.data.message
+  } catch{
+    errorMessage.value = 'Unexpected error occured, please try again'
+  } finally {
+    apiProgress.value = false
+  }
 }
 </script>
