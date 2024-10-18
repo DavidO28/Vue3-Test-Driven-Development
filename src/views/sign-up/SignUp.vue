@@ -10,45 +10,36 @@
         <h1>Sign Up</h1>
       </div>
       <div class="card-body">
-        <div class="mb-3">
-          <label class="form-label" for="username">Username</label>
-          <input
-            type="text"
-            class="form-control"
-            id="username"
-            v-model="formState.username"
-          />
-          <span>{{ errors.username }}</span>
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="email">E-mail</label>
-          <input
-            type="email"
-            class="form-control"
-            id="email"
-            v-model="formState.email"
-          />
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="password">Password</label>
-          <input
-            class="form-control"
-            id="password"
-            type="password"
-            v-model="formState.password"
-          />
-        </div>
-        <div class="mb-3">
-          <label class="form-label" for="passwordRepeat">Password Repeat</label>
-          <input
-            class="form-control"
-            id="passwordRepeat"
-            type="password"
-            v-model="formState.passwordRepeat"
-          />
-        </div>
+        <AppInput
+          id="username"
+          label="Username"
+          :help="errors.username"
+          v-model="formState.username"
+        />
+        <AppInput
+          id="email"
+          label="E-mail"
+          :help="errors.email"
+          v-model="formState.email"
+        />
+        <AppInput
+          id="password"
+          label="Password"
+          :help="errors.password"
+          v-model="formState.password"
+          type="password"
+        />
+        <AppInput
+          id="passwordRepeat"
+          label="Password Repeat"
+          :help="passwordMismatchError"
+          v-model="formState.passwordRepeat"
+          type="password"
+        />
         <div class="text-center">
-          <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+          <div v-if="errorMessage" class="alert alert-danger">
+            {{ errorMessage }}
+          </div>
           <button class="btn btn-primary" :disabled="isDisabled || apiProgress">
             <span
               v-if="apiProgress"
@@ -67,8 +58,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import axios from 'axios'
+import { AppInput } from '@/components'
 
 const formState = reactive({
   username: '',
@@ -92,7 +84,7 @@ const submit = async () => {
   apiProgress.value = true
   errorMessage.value = ''
   const { passwordRepeat, ...body } = formState
-  try{
+  try {
     const response = await axios.post('/api/v1/users', body)
     successMessage.value = response.data.message
   } catch (apiError) {
@@ -105,4 +97,29 @@ const submit = async () => {
     apiProgress.value = false
   }
 }
+
+const passwordMismatchError = computed(() => {
+  return formState.password !== formState.passwordRepeat
+    ? 'Password mismatch'
+    : undefined
+})
+
+watch(
+  () => formState.username,
+  () => {
+    delete errors.value.username
+  },
+)
+watch(
+  () => formState.email,
+  () => {
+    delete errors.value.email
+  },
+)
+watch(
+  () => formState.password,
+  () => {
+    delete errors.value.password
+  },
+)
 </script>

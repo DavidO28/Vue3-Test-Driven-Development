@@ -3,7 +3,7 @@ import SignUp from './SignUp.vue'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { HttpResponse, delay, http } from 'msw'
-import { afterAll, beforeAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect } from 'vitest'
 
 let requestBody
 let counter = 0
@@ -41,6 +41,10 @@ const setup = async () => {
     user,
     elements: {
       button,
+      usernameInput,
+      emailInput,
+      passwordInput,
+      passwordRepeatInput
     },
   }
 }
@@ -102,6 +106,18 @@ describe('Sign Up', () => {
   it('spinner isn"t displayed initially', () => {
     render(SignUp)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  describe('when passwords don"t match', () => {
+    it('displayes error', async () => {
+      const {
+        user,
+        elements: { passwordInput, passwordRepeatInput },
+      } = await setup()
+      await user.type(passwordInput, '123')
+      await user.type(passwordRepeatInput, '456')
+      expect(screen.getByText('Password mismatch')).toBeInTheDocument()
+    })
   })
 
   describe('when user sets same value for password inputs', () => {
@@ -243,27 +259,58 @@ describe('Sign Up', () => {
         })
       })
 
-      describe('when username is invalid', () => {
-        it('displays validation error', async () => {
-          server.use(
-            http.post('/api/v1/users', () => {
-              return HttpResponse.json(
-                {
-                  validationErrors: {
-                    username: 'Username cannot be null',
-                  },
-                },
-                { status: 400 },
+      describe.each([
+        { field: 'username', message: 'Username cannot be null' },
+        { field: 'email', message: 'E-mail cannot be null' },
+        { field: 'password', message: 'Password cannot be null' },
+      ])('when $field is invalid', ({ field, message }) => {
+        it(`displays ${message}`, async () => {
+          describe('when username is invalid', () => {
+            it('displays validation error', async () => {
+              server.use(
+                http.post('/api/v1/users', () => {
+                  return HttpResponse.json(
+                    {
+                      validationErrors: {
+                        [field]: message,
+                      },
+                    },
+                    { status: 400 },
+                  )
+                }),
               )
-            }),
-          )
-          const {
-            user,
-            elements: { button },
-          } = await setup()
-          await user.click(button)
-          const error = await screen.findByText('Username cannot be null')
-          expect(error).toBeInTheDocument()
+              const {
+                user,
+                elements: { button },
+              } = await setup()
+              await user.click(button)
+              const error = await screen.findByText(message)
+              expect(error).toBeInTheDocument()
+            })
+
+            it(`clears errors after user updates ${field}`, async ()=>{
+              server.use(
+                http.post('/api/v1/users', () => {
+                  return HttpResponse.json(
+                    {
+                      validationErrors: {
+                        [field]: message,
+                      },
+                    },
+                    { status: 400 },
+                  )
+                }),
+              )
+              const {
+                user,
+                elements
+              } = await setup()
+              await user.click(elements.button)
+              const error = await screen.findByText(message)
+              await user.type(elements[`${field}Input`], 'updated')
+              expect(error).not.toBeInTheDocument()
+            })
+          })
         })
       })
     })
