@@ -18,6 +18,7 @@
             id="username"
             v-model="formState.username"
           />
+          <span>{{ errors.username }}</span>
         </div>
         <div class="mb-3">
           <label class="form-label" for="email">E-mail</label>
@@ -85,6 +86,7 @@ const isDisabled = computed(() => {
 const apiProgress = ref(false)
 const successMessage = ref()
 const errorMessage = ref()
+const errors = ref({})
 
 const submit = async () => {
   apiProgress.value = true
@@ -93,8 +95,12 @@ const submit = async () => {
   try{
     const response = await axios.post('/api/v1/users', body)
     successMessage.value = response.data.message
-  } catch{
-    errorMessage.value = 'Unexpected error occured, please try again'
+  } catch (apiError) {
+    if (apiError.response?.status === 400) {
+      errors.value = apiError.response.data.validationErrors
+    } else {
+      errorMessage.value = 'Unexpected error occurred, please try again'
+    }
   } finally {
     apiProgress.value = false
   }

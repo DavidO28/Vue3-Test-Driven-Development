@@ -116,7 +116,7 @@ describe('Sign Up', () => {
           } = await setup()
           await user.click(button)
           const text = await screen.findByText(
-            'Unexpected error occured, please try again',
+            'Unexpected error occurred, please try again',
           )
           expect(text).toBeInTheDocument()
         })
@@ -132,12 +132,33 @@ describe('Sign Up', () => {
           } = await setup()
           await user.click(button)
           const text = await screen.findByText(
-            'Unexpected error occured, please try again',
+            'Unexpected error occurred, please try again',
           )
           await user.click(button)
           await waitFor(() => {
             expect(text).not.toBeInTheDocument()
           })
+        })
+      })
+      describe('when username is invalid', () => {
+        it('displays validation error', async () => {
+          axios.post.mockRejectedValueOnce({
+            response:{
+              status: 400,
+              data:{
+                validationErrors: {
+                  username: 'Username cannot be null',
+                }
+              }
+            }
+          })
+          const {
+            user,
+            elements: { button },
+          } = await setup()
+          await user.click(button)
+          const error = await screen.findByText('Username cannot be null')
+          expect(error).toBeInTheDocument()
         })
       })
 
