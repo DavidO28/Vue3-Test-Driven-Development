@@ -218,5 +218,32 @@ describe('Sign Up', () => {
       await user.click(button)
       expect(screen.queryByRole('status')).not.toBeInTheDocument()
     })
+
+    describe('when user submits form again', () => {
+      it('hides error message when is api progress', async () => {
+        let processedRequest = false
+        server.use(
+          http.post('/api/v1/users', async () => {
+            if (!processedRequest){
+              return HttpResponse.error()
+            } else {
+              return HttpResponse.json({})
+            }
+          }),
+        )
+        const {
+          user,
+          elements: { button },
+        } = await setup()
+        await user.click(button)
+        const text = await screen.findByText(
+          'Unexpected error occured, please try again',
+        )
+        await user.click(button)
+        await waitFor(() => {
+          expect(text).not.toBeInTheDocument()
+        })
+      })
+    })
   })
 })

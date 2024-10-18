@@ -83,6 +83,18 @@ describe('Sign Up', () => {
           const text = await screen.findByText('User create success')
           expect(text).toBeInTheDocument()
         })
+        it('hides sign up form', async () => {
+          const {
+            user,
+            elements: { button },
+          } = await setup()
+          const form = screen.getByTestId('form-sign-up')
+          await user.click(button)
+          await waitFor(() => {
+            expect(form).not.toBeInTheDocument()
+          })
+        })
+    
         it('hides spinner', async () => {
           const {
             user,
