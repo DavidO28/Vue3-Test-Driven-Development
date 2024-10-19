@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/vue'
+import { render, screen, waitFor } from 'test/helper'
 import SignUp from './SignUp.vue'
-import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { HttpResponse, delay, http } from 'msw'
-import { afterAll, beforeAll, describe, expect } from 'vitest'
+import { afterAll, beforeAll } from 'vitest'
+import { i18n } from '@/locales'
 
 let requestBody
 let counter = 0
@@ -12,7 +12,7 @@ const server = setupServer(
     requestBody = await request.json()
     counter += 1
     return HttpResponse.json({ message: 'User create success' })
-  }),
+  })
 )
 
 beforeEach(() => {
@@ -25,8 +25,7 @@ beforeAll(() => server.listen())
 afterAll(() => server.close())
 
 const setup = async () => {
-  const user = userEvent.setup()
-  const result = render(SignUp)
+  const { user, result } = render(SignUp)
   const usernameInput = screen.getByLabelText('Username')
   const emailInput = screen.getByLabelText('E-mail')
   const passwordInput = screen.getByLabelText('Password')
@@ -45,7 +44,7 @@ const setup = async () => {
       emailInput,
       passwordInput,
       passwordRepeatInput
-    },
+    }
   }
 }
 
@@ -73,10 +72,7 @@ describe('Sign Up', () => {
 
   it('has password type for password input', () => {
     render(SignUp)
-    expect(screen.getByLabelText('Password')).toHaveAttribute(
-      'type',
-      'password',
-    )
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password')
   })
 
   it('has password repeat input', () => {
@@ -86,10 +82,7 @@ describe('Sign Up', () => {
 
   it('has password type for password repeat input', () => {
     render(SignUp)
-    expect(screen.getByLabelText('Password Repeat')).toHaveAttribute(
-      'type',
-      'password',
-    )
+    expect(screen.getByLabelText('Password Repeat')).toHaveAttribute('type', 'password')
   })
 
   it('has Sign Up button', () => {
@@ -103,16 +96,16 @@ describe('Sign Up', () => {
     expect(screen.getByRole('button', { name: 'Sign Up' })).toBeDisabled()
   })
 
-  it('spinner isn"t displayed initially', () => {
+  it('does not display spinner', () => {
     render(SignUp)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
-  describe('when passwords don"t match', () => {
-    it('displayes error', async () => {
+  describe('when passwords do not match', () => {
+    it('displays error', async () => {
       const {
         user,
-        elements: { passwordInput, passwordRepeatInput },
+        elements: { passwordInput, passwordRepeatInput }
       } = await setup()
       await user.type(passwordInput, '123')
       await user.type(passwordRepeatInput, '456')
@@ -123,7 +116,7 @@ describe('Sign Up', () => {
   describe('when user sets same value for password inputs', () => {
     it('enables button', async () => {
       const {
-        elements: { button },
+        elements: { button }
       } = await setup()
       expect(button).toBeEnabled()
     })
@@ -132,23 +125,48 @@ describe('Sign Up', () => {
       it('sends username, email, password to the backend', async () => {
         const {
           user,
-          elements: { button },
+          elements: { button }
         } = await setup()
         await user.click(button)
         await waitFor(() => {
           expect(requestBody).toEqual({
             username: 'user1',
             email: 'user1@mail.com',
-            password: 'P4ssword',
+            password: 'P4ssword'
           })
         })
       })
+
+      describe.each([{ language: 'tr' }, { language: 'en' }])(
+        'when langauge is $language',
+        ({ language }) => {
+          it('sends expected language in accept language header', async () => {
+            let acceptLanguage
+            server.use(
+              http.post('/api/v1/users', async ({ request }) => {
+                acceptLanguage = request.headers.get('Accept-Language')
+                await delay('infinite')
+                return HttpResponse.json({})
+              })
+            )
+            const {
+              user,
+              elements: { button }
+            } = await setup()
+            i18n.global.locale = language
+            await user.click(button)
+            await waitFor(() => {
+              expect(acceptLanguage).toBe(language)
+            })
+          })
+        }
+      )
 
       describe('when there is an ongoing api call', () => {
         it('does not allow clicking the button', async () => {
           const {
             user,
-            elements: { button },
+            elements: { button }
           } = await setup()
           await user.click(button)
           await user.click(button)
@@ -162,11 +180,11 @@ describe('Sign Up', () => {
             http.post('/api/v1/users', async () => {
               await delay('infinite')
               return HttpResponse.json({})
-            }),
+            })
           )
           const {
             user,
-            elements: { button },
+            elements: { button }
           } = await setup()
           await user.click(button)
           expect(screen.getByRole('status')).toBeInTheDocument()
@@ -176,7 +194,7 @@ describe('Sign Up', () => {
         it('displays message received from backend', async () => {
           const {
             user,
-            elements: { button },
+            elements: { button }
           } = await setup()
           await user.click(button)
           const text = await screen.findByText('User create success')
@@ -186,7 +204,7 @@ describe('Sign Up', () => {
         it('hides sign up form', async () => {
           const {
             user,
-            elements: { button },
+            elements: { button }
           } = await setup()
           const form = screen.getByTestId('form-sign-up')
           await user.click(button)
@@ -201,16 +219,14 @@ describe('Sign Up', () => {
           server.use(
             http.post('/api/v1/users', () => {
               return HttpResponse.error()
-            }),
+            })
           )
           const {
             user,
-            elements: { button },
+            elements: { button }
           } = await setup()
           await user.click(button)
-          const text = await screen.findByText(
-            'Unexpected error occurred, please try again',
-          )
+          const text = await screen.findByText('Unexpected error occurred, please try again')
           expect(text).toBeInTheDocument()
         })
 
@@ -218,11 +234,11 @@ describe('Sign Up', () => {
           server.use(
             http.post('/api/v1/users', () => {
               return HttpResponse.error()
-            }),
+            })
           )
           const {
             user,
-            elements: { button },
+            elements: { button }
           } = await setup()
           await user.click(button)
           await waitFor(() => {
@@ -241,16 +257,14 @@ describe('Sign Up', () => {
                 } else {
                   return HttpResponse.json({})
                 }
-              }),
+              })
             )
             const {
               user,
-              elements: { button },
+              elements: { button }
             } = await setup()
             await user.click(button)
-            const text = await screen.findByText(
-              'Unexpected error occurred, please try again',
-            )
+            const text = await screen.findByText('Unexpected error occurred, please try again')
             await user.click(button)
             await waitFor(() => {
               expect(text).not.toBeInTheDocument()
@@ -262,55 +276,48 @@ describe('Sign Up', () => {
       describe.each([
         { field: 'username', message: 'Username cannot be null' },
         { field: 'email', message: 'E-mail cannot be null' },
-        { field: 'password', message: 'Password cannot be null' },
+        { field: 'password', message: 'Password cannot be null' }
       ])('when $field is invalid', ({ field, message }) => {
         it(`displays ${message}`, async () => {
-          describe('when username is invalid', () => {
-            it('displays validation error', async () => {
-              server.use(
-                http.post('/api/v1/users', () => {
-                  return HttpResponse.json(
-                    {
-                      validationErrors: {
-                        [field]: message,
-                      },
-                    },
-                    { status: 400 },
-                  )
-                }),
+          server.use(
+            http.post('/api/v1/users', () => {
+              return HttpResponse.json(
+                {
+                  validationErrors: {
+                    [field]: message
+                  }
+                },
+                { status: 400 }
               )
-              const {
-                user,
-                elements: { button },
-              } = await setup()
-              await user.click(button)
-              const error = await screen.findByText(message)
-              expect(error).toBeInTheDocument()
             })
+          )
+          const {
+            user,
+            elements: { button }
+          } = await setup()
+          await user.click(button)
+          const error = await screen.findByText(message)
+          expect(error).toBeInTheDocument()
+        })
 
-            it(`clears errors after user updates ${field}`, async ()=>{
-              server.use(
-                http.post('/api/v1/users', () => {
-                  return HttpResponse.json(
-                    {
-                      validationErrors: {
-                        [field]: message,
-                      },
-                    },
-                    { status: 400 },
-                  )
-                }),
+        it(`clears error after user updates ${field}`, async () => {
+          server.use(
+            http.post('/api/v1/users', () => {
+              return HttpResponse.json(
+                {
+                  validationErrors: {
+                    [field]: message
+                  }
+                },
+                { status: 400 }
               )
-              const {
-                user,
-                elements
-              } = await setup()
-              await user.click(elements.button)
-              const error = await screen.findByText(message)
-              await user.type(elements[`${field}Input`], 'updated')
-              expect(error).not.toBeInTheDocument()
             })
-          })
+          )
+          const { user, elements } = await setup()
+          await user.click(elements.button)
+          const error = await screen.findByText(message)
+          await user.type(elements[`${field}Input`], 'updated')
+          expect(error).not.toBeInTheDocument()
         })
       })
     })

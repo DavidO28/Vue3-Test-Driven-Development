@@ -7,72 +7,67 @@
       v-if="!successMessage"
     >
       <div class="card-header text-center">
-        <h1>Sign Up</h1>
+        <h1>{{ $t('signUp') }}</h1>
       </div>
       <div class="card-body">
         <AppInput
           id="username"
-          label="Username"
+          :label="$t('username')"
           :help="errors.username"
           v-model="formState.username"
         />
         <AppInput
           id="email"
-          label="E-mail"
+          :label="$t('email')"
           :help="errors.email"
           v-model="formState.email"
         />
         <AppInput
           id="password"
-          label="Password"
+          :label="$t('password')"
           :help="errors.password"
           v-model="formState.password"
           type="password"
         />
         <AppInput
           id="passwordRepeat"
-          label="Password Repeat"
+          :label="$t('passwordRepeat')"
           :help="passwordMismatchError"
           v-model="formState.passwordRepeat"
           type="password"
         />
+        <div v-if="errorMessage" class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
         <div class="text-center">
-          <div v-if="errorMessage" class="alert alert-danger">
-            {{ errorMessage }}
-          </div>
           <button class="btn btn-primary" :disabled="isDisabled || apiProgress">
             <span
               v-if="apiProgress"
               role="status"
               class="spinner-border spinner-border-sm"
             ></span>
-            <span>Sign Up</span>
+            {{ $t('signUp') }}
           </button>
         </div>
       </div>
     </form>
-    <div v-else-if="successMessage" class="alert alert-success">
-      {{ successMessage }}
-    </div>
+    <div v-else class="alert alert-success">{{ successMessage }}</div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
-import axios from 'axios'
+import { reactive, computed, ref, watch } from 'vue'
 import { AppInput } from '@/components'
+import { useI18n } from 'vue-i18n'
+import { signUp } from './api'
+
+const { t } = useI18n()
 
 const formState = reactive({
   username: '',
   email: '',
   password: '',
   passwordRepeat: '',
-})
-
-const isDisabled = computed(() => {
-  return formState.password || formState.passwordRepeat
-    ? formState.password !== formState.passwordRepeat
-    : true
 })
 
 const apiProgress = ref(false)
@@ -82,25 +77,31 @@ const errors = ref({})
 
 const submit = async () => {
   apiProgress.value = true
-  errorMessage.value = ''
+  errorMessage.value = undefined
   const { passwordRepeat, ...body } = formState
   try {
-    const response = await axios.post('/api/v1/users', body)
+    const response = await signUp(body)
     successMessage.value = response.data.message
   } catch (apiError) {
     if (apiError.response?.status === 400) {
       errors.value = apiError.response.data.validationErrors
     } else {
-      errorMessage.value = 'Unexpected error occurred, please try again'
+      errorMessage.value = t('genericError')
     }
   } finally {
     apiProgress.value = false
   }
 }
 
+const isDisabled = computed(() => {
+  return formState.password || formState.passwordRepeat
+    ? formState.password !== formState.passwordRepeat
+    : true
+})
+
 const passwordMismatchError = computed(() => {
   return formState.password !== formState.passwordRepeat
-    ? 'Password mismatch'
+    ? t('passwordMismatch')
     : undefined
 })
 
