@@ -137,7 +137,7 @@ describe('Sign Up', () => {
         })
       })
 
-      describe.each([{ language: 'tr' }, { language: 'en' }])(
+      describe.each([{ language: 'ge' }, { language: 'en' }])(
         'when langauge is $language',
         ({ language }) => {
           it('sends expected language in accept language header', async () => {

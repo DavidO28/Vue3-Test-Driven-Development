@@ -1,11 +1,12 @@
 <script setup>
-import LanguageSelector from './components/LanguageSelector.vue'
-import SignUp from './views/sign-up/SignUp.vue'
+import { RouterLink, RouterView } from 'vue-router'
+import { LanguageSelector, NavBar } from './components'
 </script>
 
 <template>
   <main class="container">
+    <NavBar />
     <LanguageSelector />
-    <SignUp />
+    <RouterView />
   </main>
 </template>

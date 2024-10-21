@@ -1,5 +1,8 @@
 <template>
-  <div class="col-lg-6 offset-lg-3 col-md-8 offset-md-2">
+  <div
+    class="col-lg-6 offset-lg-3 col-md-8 offset-md-2"
+    data-testid="signup-page"
+  >
     <form
       class="card"
       @submit.prevent="submit"
@@ -41,11 +44,7 @@
         </div>
         <div class="text-center">
           <button class="btn btn-primary" :disabled="isDisabled || apiProgress">
-            <span
-              v-if="apiProgress"
-              role="status"
-              class="spinner-border spinner-border-sm"
-            ></span>
+            <Spinner v-if="apiProgress" />
             {{ $t('signUp') }}
           </button>
         </div>
@@ -57,7 +56,7 @@
 
 <script setup>
 import { reactive, computed, ref, watch } from 'vue'
-import { AppInput } from '@/components'
+import { AppInput, Spinner } from '@/components'
 import { useI18n } from 'vue-i18n'
 import { signUp } from './api'
 
