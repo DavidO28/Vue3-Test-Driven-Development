@@ -43,10 +43,9 @@
           {{ errorMessage }}
         </div>
         <div class="text-center">
-          <button class="btn btn-primary" :disabled="isDisabled || apiProgress">
-            <Spinner v-if="apiProgress" />
+          <AppButton class="btn btn-primary" :disabled="isDisabled || apiProgress">
             {{ $t('signUp') }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </form>
@@ -56,7 +55,7 @@
 
 <script setup>
 import { reactive, computed, ref, watch } from 'vue'
-import { AppInput, Spinner } from '@/components'
+import { AppButton, AppInput, Spinner } from '@/components'
 import { useI18n } from 'vue-i18n'
 import { signUp } from './api'
 
