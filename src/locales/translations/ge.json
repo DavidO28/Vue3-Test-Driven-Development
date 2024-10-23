@@ -9,5 +9,10 @@
   "passwordReset": {
     "request": "პაროლის შეცვლა",
     "set": "პაროლის დაყენება"
+  },
+  "userList": {
+    "header": "მომხმარებლები",
+    "next": "შემდეგი",
+    "previous": "უკან"
   }
 }
