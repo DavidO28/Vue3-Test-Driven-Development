@@ -1,5 +1,5 @@
 import UserList from './UserList.vue'
-import { screen, waitFor, render } from 'test/helper'
+import { screen, waitFor, render, router } from 'test/helper'
 import { setupServer } from 'msw/node'
 import { HttpResponse, http } from 'msw'
 import { afterAll, beforeAll, expect } from 'vitest'
@@ -167,6 +167,15 @@ describe('UserList', () => {
         await waitFor(() => {
           expect(screen.queryByRole('status')).not.toBeInTheDocument()
         })
+      })
+    })
+
+    describe('when user clicks username', () => {
+      it('navigates to user page', async () => {
+        const { user } = render(UserList)
+        const link = await screen.findByText('user1')
+        await user.click(link)
+        expect(router.currentRoute.value.path).toBe('/user/1')
       })
     })
   })
